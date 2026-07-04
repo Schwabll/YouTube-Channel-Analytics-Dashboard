@@ -113,7 +113,7 @@ with tab1:
     with col_left:
         # Views over time
         monthly = filtered_df.groupby(
-            filtered_df["published_at"].dt.to_period("M")
+            filtered_df["published_at"].dt.tz_localize(None).dt.to_period("M")
         )["view_count"].sum().reset_index()
         monthly["published_at"] = monthly["published_at"].astype(str)
 
@@ -123,7 +123,7 @@ with tab1:
             labels={"published_at": "Month", "view_count": "Views"}
         )
         fig.update_layout(xaxis_tickangle=-45)
-        st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(fig, width="stretch")
 
     with col_right:
         # Top 10 videos
@@ -137,7 +137,7 @@ with tab1:
             labels={"view_count": "Views", "title_short": ""},
         )
         fig.update_layout(yaxis={"categoryorder": "total ascending"})
-        st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(fig, width="stretch")
 
     # Channel comparison (if multiple channels)
     if selected_channel == "All" and df["channel_name"].nunique() > 1:
@@ -159,7 +159,7 @@ with tab1:
                 "avg_likes": "{:,.0f}",
                 "avg_like_rate": "{:.3f}",
             }),
-            use_container_width=True
+            width="stretch"
         )
 
         fig = px.box(
@@ -168,7 +168,7 @@ with tab1:
             log_y=True,
             labels={"channel_name": "Channel", "view_count": "Views (log scale)"}
         )
-        st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(fig, width="stretch")
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -182,15 +182,23 @@ with tab2:
 
     with col_left:
         # Title length vs views
+        scatter_data = filtered_df[["title_length", "log_view_count", "title", "channel_name"]].dropna()
         fig = px.scatter(
-            filtered_df, x="title_length", y="log_view_count",
+            scatter_data, x="title_length", y="log_view_count",
             color="channel_name" if selected_channel == "All" else None,
             title="Title Length vs Log(Views)",
-            trendline="ols",
             labels={"title_length": "Title character count", "log_view_count": "Log(Views)"},
             hover_data=["title"]
         )
-        st.plotly_chart(fig, use_container_width=True)
+        if len(scatter_data) > 2:
+            x_vals = scatter_data["title_length"].values
+            y_vals = scatter_data["log_view_count"].values
+            z = np.polyfit(x_vals, y_vals, 1)
+            p = np.poly1d(z)
+            x_line = np.linspace(x_vals.min(), x_vals.max(), 100)
+            fig.add_scatter(x=x_line, y=p(x_line), mode="lines", name="Trend",
+                line=dict(color="red", width=2, dash="dash"))
+        st.plotly_chart(fig, width="stretch")
 
     with col_right:
         # Hype words vs views
@@ -201,7 +209,7 @@ with tab2:
             title="Hype Words in Title vs Log(Views)",
             labels={"title_hype_word_count": "Number of hype words", "log_view_count": "Log(Views)"}
         )
-        st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(fig, width="stretch")
 
     # Binary title feature comparison
     st.subheader("Title Feature Impact on Average Views")
@@ -237,7 +245,7 @@ with tab2:
         title="Average Views: With vs Without Each Title Feature",
         yaxis_title="Average Views"
     )
-    st.plotly_chart(fig, use_container_width=True)
+    st.plotly_chart(fig, width="stretch")
 
     # Lift table
     st.dataframe(
@@ -246,7 +254,7 @@ with tab2:
             "Without feature": "{:,.0f}",
             "Lift": "{:+.1f}%"
         }),
-        use_container_width=True
+        width="stretch"
     )
 
 
@@ -273,7 +281,7 @@ with tab3:
             labels={"Day": "Day of Week", "Avg Views": "Average Views"}
         )
         fig.update_traces(textposition="outside", texttemplate="n=%{text}")
-        st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(fig, width="stretch")
 
     with col_right:
         # Best hour
@@ -285,20 +293,28 @@ with tab3:
             title="Average Views by Upload Hour (UTC)",
             markers=True
         )
-        st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(fig, width="stretch")
 
     # Duration vs views
     duration_data = filtered_df[filtered_df["duration_minutes"] < 60].copy()
+    dur_scatter = duration_data[["duration_minutes", "log_view_count", "title", "channel_name"]].dropna()
     fig = px.scatter(
-        duration_data,
+        dur_scatter,
         x="duration_minutes", y="log_view_count",
         color="channel_name" if selected_channel == "All" else None,
         title="Video Duration vs Log(Views) — videos under 60 min",
-        trendline="ols",
         labels={"duration_minutes": "Duration (minutes)", "log_view_count": "Log(Views)"},
         hover_data=["title"]
     )
-    st.plotly_chart(fig, use_container_width=True)
+    if len(dur_scatter) > 2:
+        x_d = dur_scatter["duration_minutes"].values
+        y_d = dur_scatter["log_view_count"].values
+        zd = np.polyfit(x_d, y_d, 1)
+        pd_line = np.poly1d(zd)
+        xd_line = np.linspace(x_d.min(), x_d.max(), 100)
+        fig.add_scatter(x=xd_line, y=pd_line(xd_line), mode="lines", name="Trend",
+            line=dict(color="red", width=2, dash="dash"))
+    st.plotly_chart(fig, width="stretch")
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -350,7 +366,7 @@ with tab4:
             color_continuous_scale="viridis"
         )
         fig.update_layout(yaxis={"categoryorder": "total ascending"})
-        st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(fig, width="stretch")
 
         st.session_state["model"] = model
         st.session_state["feature_names"] = feature_names
@@ -443,9 +459,9 @@ with tab5:
             channel_avg = df["views_per_day"].median()
             pct_diff = (predicted_views_per_day - channel_avg) / channel_avg * 100
             if pct_diff > 0:
-                st.success(f" This video is predicted to perform **{pct_diff:.0f}% above** the median video in your dataset.")
+                st.success(f"📈 This video is predicted to perform **{pct_diff:.0f}% above** the median video in your dataset.")
             else:
-                st.warning(f" This video is predicted to perform **{abs(pct_diff):.0f}% below** the median video in your dataset.")
+                st.warning(f"📉 This video is predicted to perform **{abs(pct_diff):.0f}% below** the median video in your dataset.")
 
             st.caption("Note: predictions are based on structural features only (title, timing, duration). Content quality, thumbnails, and algorithmic promotion are major factors the model cannot capture.")
 
