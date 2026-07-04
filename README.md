@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # YouTube Channel Analytics Dashboard
 
 A machine learning dashboard that predicts YouTube video performance and surfaces insights about what makes videos succeed — built with the YouTube Data API, scikit-learn, and Streamlit.
@@ -134,3 +135,7 @@ Expect R² values of 0.2–0.5 — this is normal and expected given these unobs
 ---
 
 Built as a portfolio project demonstrating end-to-end ML pipeline development.
+=======
+# YouTube-Channel-Analytics-Dashboard
+Dashboard predicting which video topics/titles/thumbnails correlate with higher views.
+>>>>>>> 02d88812b1cb0dae8da49c5f9af39bf1105f6559
