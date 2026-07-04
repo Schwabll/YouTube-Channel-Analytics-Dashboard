@@ -1,0 +1,38 @@
+# Environment
+venv/
+.env
+*.env
+
+# API keys and secrets — never commit these
+.env.local
+secrets.json
+
+# Data files — raw data stays local
+data/raw/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.egg-info/
+dist/
+build/
+
+# Jupyter
+.ipynb_checkpoints/
+*.ipynb_checkpoints
+
+# VS Code
+.vscode/
+*.code-workspace
+
+# macOS
+.DS_Store
+
+# Output files
+*.png
+*.jpg
+*.csv
+!data/sample/  # allow sample data if you add it
